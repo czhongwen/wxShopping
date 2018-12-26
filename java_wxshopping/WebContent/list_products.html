@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>全部商品</title>
+<meta http-equiv="content-type" content="text/json" charset="gbk">
+<link rel="stylesheet" href="code/css/bootstrap.min.css">
+<script type="text/javascript" src="code/js/jQuery3.3.js"></script>
+<script type="text/javascript" src="code/js/bootstrap.min.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.2.2/vue.min.js"></script>
+<link href="./code/css/search.css">
+<style>
+body, div, table, tr, td, th, ul, li, a {
+	padding: 0px;
+	margin: 0px;
+}
+
+#app a:hover {
+	background: red;
+	cursor: pointer;
+}
+</style>
+<script type="text/javascript">
+	var res;
+	if (window.XMLHttpRequest)
+	  {
+	    // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
+	    xmlhttp=new XMLHttpRequest();
+	  }
+	  else
+	  {
+	    // IE6, IE5 浏览器执行代码
+	    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+	  }
+	  xmlhttp.onreadystatechange=function()
+	  {
+	    if (xmlhttp.readyState==4 && xmlhttp.status==200)
+	    {
+	      //document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+	      res=JSON.parse(xmlhttp.responseText);
+	      setData();
+	    }
+	  }
+	  xmlhttp.open("POST","GetAllProducts",true);
+	  xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
+	  xmlhttp.send(); 
+		function setData() {
+			pageIndex=1;//分页起始页
+			var arr=[];//装每页的信息的数组 是一个二维数组
+			pageArr=[];//一共有多少页  是一个二维数组;
+			pageTemp=[];//每次显示多的龙套;
+			var temp=[];//装每页信息的龙套数组
+			for(var i=0;i<res.length;++i){
+				temp.push(res[i])
+				if((i+1)%7==0){
+					arr.push(temp);
+					temp=[];
+					pageTemp.push(pageIndex)
+					if(pageIndex%10==0){
+						pageArr.push(pageTemp);
+						pageTemp=[];
+					}
+					pageIndex++;
+				}
+			}
+			if(temp.length>0){
+				arr.push(temp);
+			}
+			if(pageTemp.length>0){
+				pageArr.push(pageTemp);
+			}
+			var app;
+			$(function () {
+				app=new Vue({
+					  el:"#app",
+					  data:{
+						  index:0,
+						  products:arr[12],
+						  pages:pageArr[0],
+						  checkedProducts:[],
+						  flag:true,
+					  },
+					  methods:{
+						  page:function (pId) {
+				              this.products=arr[pId-1]
+				            },
+				          pro:function(){
+				        	  if(this.index>0){
+				        		  this.index-=1;
+				        		  this.pages=pageArr[this.index];
+				        	  }
+				          },
+				          next:function(){
+				        	  if(this.index<pageArr.length-1){
+				        		  this.index+=1;
+				        		  this.pages=pageArr[this.index];
+				        	  } 
+				          },
+				          all:function(){
+				        	  this.checkedProducts=[];
+				        	  if(this.flag==true){
+				        		for (var i = 0; i < this.products.length; i++) {
+					        		  this.checkedProducts.push(this.products[i].pId)
+								}
+				        		this.flag=false;
+				        	  }else{
+				        		  this.flag=true; 
+				        	  }
+				          }
+					  }
+				})
+			})
+		}
+</script>
+</head>
+<body>
+	<div class="container" id="app">
+		<div class="row" style="margin: 2%;">
+			<div class="col-md-2 pull-right">
+				<input type="text" class="form-control">
+			</div>
+
+			<div class="col-md-2">
+				<input type="button" class="btn" @click="all" value="全选"> <input
+					type="button" class="btn btn-danger" value="删除">
+			</div>
+		</div>
+		<div class="row">
+			<table class="table table-striped table-hover table-bordered">
+				<tr>
+					<th>选择</th>
+					<th>编号</th>
+					<th>图片</th>
+					<th>名称</th>
+					<th>描述</th>
+					<th>价格</th>
+					<th>数量</th>
+					<th>折扣</th>
+					<th>添加日期</th>
+				</tr>
+				<template v-for="p in products">
+				<tr>
+					<td><input type="checkbox" :value="p.pId"
+						v-model="checkedProducts"></td>
+					<td>{{p.pId}}</td>
+					<td><a href="#"><img :src="p.pIc1"
+							class="img-responsive center-block" height=60 width=60></a></td>
+					<td>{{p.pName}}</td>
+					<td>{{p.pInfo}}</td>
+					<td>{{p.pPrice}}</td>
+					<td>{{p.pNum}}</td>
+					<td>{{p.discount}}</td>
+					<td>{{p.rDate}}</td>
+				</tr>
+				</template>
+			</table>
+		</div>
+		<div class="row pull-right">
+			<ul class="pagination">
+				<li><a @click="pro()">&laquo;</a></li>
+				<template v-for="item in pages">
+				<li><a @click="page(item)">{{item}}</a></li>
+				</template>
+				<li><a @click="next()">&raquo;</a></li>
+			</ul>
+		</div>
+	</div>
+</body>
+</html>
